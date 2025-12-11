@@ -35,7 +35,7 @@ The algorithm addresses key concerns:
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/SankalpSTiwari/the-reddit-mastermind.git
 cd the-reddit-mastermind
 
 # Install dependencies
