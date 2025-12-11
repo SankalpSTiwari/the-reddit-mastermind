@@ -1,0 +1,186 @@
+# Reddit Mastermind
+
+A content calendar generator for organic Reddit marketing. This tool helps create natural, engaging Reddit posts and comment threads that drive upvotes, views, and inbound leads.
+
+## Features
+
+- **Content Calendar Generation**: Automatically generates weekly content calendars with posts and comments
+- **Persona Management**: Support for multiple personas with distinct backgrounds and writing styles
+- **Smart Distribution**: Intelligent subreddit rotation to avoid overposting
+- **Quality Metrics**: Built-in evaluation of naturalness, diversity, and keyword coverage
+- **Sequential Week Generation**: Generate subsequent weeks while maintaining history
+- **Export Functionality**: Export calendars as JSON for integration with posting tools
+
+## Algorithm Highlights
+
+The algorithm addresses key concerns:
+
+1. **Natural Conversations**: Posts use varied engagement types (questions, comparisons, discussions)
+2. **Authentic Threads**: Comments follow realistic timing patterns and conversation flow
+3. **Diversity**: Automatic rotation of subreddits, personas, and engagement types
+4. **Avoiding Detection**:
+   - No persona comments on their own post first
+   - Varied posting times across the week
+   - Subreddit frequency limits
+5. **Quality Scoring**: Each calendar includes metrics for naturalness, diversity, and warnings
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd the-reddit-mastermind
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to view the app.
+
+### Quick Start
+
+1. Click "Load Sample Data" to populate with Slideforge sample data
+2. Review and modify the configuration as needed
+3. Click "Generate Calendar" to create your first week
+4. Click "Generate Week X" to create subsequent weeks
+
+## Configuration
+
+### Company Info
+
+- **Name**: Your product/company name
+- **Website**: Product website URL
+- **Description**: Detailed product description
+- **ICP**: Ideal Customer Profile
+
+### Personas (minimum 2)
+
+Each persona needs:
+
+- **Username**: Reddit username
+- **Background**: Character backstory
+- **Expertise**: Areas of knowledge
+- **Writing Style**: How they communicate
+- **Subreddit Affinities**: Relevant subreddits
+
+### Subreddits
+
+List of target subreddits (with r/ prefix)
+
+### Keywords
+
+Target keywords/queries for SEO and LLM citations
+
+### Posts Per Week
+
+Number of posts to generate (1-10)
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Import project in Vercel
+3. Deploy
+
+```bash
+# Or use Vercel CLI
+npm i -g vercel
+vercel
+```
+
+### Other Platforms
+
+The app is a standard Next.js application and can be deployed to:
+
+- Netlify
+- Railway
+- AWS Amplify
+- Docker containers
+
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **Date Handling**: date-fns
+
+## Project Structure
+
+```
+├── app/
+│   ├── api/
+│   │   └── generate-calendar/
+│   │       └── route.ts      # API endpoint
+│   ├── globals.css           # Global styles
+│   ├── layout.tsx            # Root layout
+│   └── page.tsx              # Main page
+├── components/
+│   ├── CalendarView.tsx      # Calendar display
+│   └── InputForms.tsx        # Configuration forms
+├── lib/
+│   ├── algorithm.ts          # Core generation algorithm
+│   ├── sample-data.ts        # Slideforge sample data
+│   └── types.ts              # TypeScript types
+└── README.md
+```
+
+## Algorithm Details
+
+### End-to-end flow (planning algorithm)
+
+1. **Plan distribution**
+
+   - Spread posts Mon–Fri, peak hours 9a–8p
+   - Rotate subreddits using usage scores + history to avoid overposting
+   - Rotate personas with subreddit affinity and usage balancing
+   - Rotate engagement types (question, recommendation, comparison, discussion)
+   - Select 2–3 keywords per post to maximize coverage across the week
+
+2. **Generate posts**
+
+   - Engagement-type templates with keyword cleaning (avoid duplicated prefixes like “best …”)
+   - Comparison posts use subreddit-aware competitor lists
+   - Titles/bodies kept short, natural, and editable
+
+3. **Generate threads**
+
+   - 2–4 comments per post
+   - First comment is a natural product mention; second adds social proof; OP closes the loop
+   - Realistic time gaps between post and replies; OP never comments first
+
+4. **Quality scoring**
+
+   - **Naturalness**: duplicate titles, timing variety, self-replies penalized
+   - **Diversity**: subreddit spread, persona balance (std dev), engagement variety
+   - **Keyword coverage**: % of keywords used
+   - **Warnings**: overposting in a subreddit, persona imbalance, low coverage
+
+5. **History for subsequent weeks**
+   - Track used topics (titles) to reduce repetition
+   - Track subreddit post counts across weeks to throttle overuse
+   - `updateCalendarHistory` merges the latest calendar into history
+
+## Future Enhancements
+
+- [ ] AI-powered content generation (OpenAI/Claude integration)
+- [ ] Supabase integration for persistence
+- [ ] Cron job automation
+- [ ] A/B testing different post styles
+- [ ] Analytics dashboard
+- [ ] Direct Reddit API integration
+
+## License
+
+MIT

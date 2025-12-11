@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --reddit-orange: #FF4500;
+  --reddit-orange-dark: #CC3700;
+  --reddit-blue: #0079D3;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #09090b;
+  color: #f4f4f5;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+/* Reddit-style card */
+.reddit-card {
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.reddit-card:hover {
+  border-color: #3f3f46;
+}
+
+/* Glow effect */
+.glow-orange {
+  box-shadow: 0 0 40px -10px rgba(255, 69, 0, 0.3);
+}
+
+.glow-orange-subtle {
+  box-shadow: 0 0 20px -5px rgba(255, 69, 0, 0.15);
+}
+
+/* Input focus styles */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #FF4500 !important;
+  box-shadow: 0 0 0 1px #FF4500;
+}
+
+/* Tab active indicator */
+.tab-active {
+  position: relative;
+}
+
+.tab-active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #FF4500;
+  border-radius: 2px 2px 0 0;
+}
+
+/* Subreddit badge */
+.subreddit-badge {
+  background: rgba(255, 69, 0, 0.1);
+  border: 1px solid rgba(255, 69, 0, 0.2);
+}
+
+/* Thread line */
+.thread-line {
+  width: 2px;
+  background: linear-gradient(to bottom, #27272a, transparent);
+}
+
+/* Form input base */
+.form-input {
+  @apply w-full px-4 py-3 bg-surface-900 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 transition-all duration-200;
+}
+
+.form-input:focus {
+  @apply border-reddit-orange ring-1 ring-reddit-orange;
+}
+
+/* Button base */
+.btn-primary {
+  @apply px-6 py-3 bg-reddit-orange hover:bg-reddit-orangeDark text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply px-6 py-3 bg-surface-800 hover:bg-surface-700 text-surface-100 border border-surface-600 font-medium rounded-lg transition-all duration-200;
+}
