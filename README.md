@@ -239,17 +239,22 @@ The app is a standard Next.js application and can be deployed to:
 If you provide an OpenAI API key, you can wrap the generated titles/bodies in a post-processing LLM call to polish wording and further reduce repetition. If no key is provided, the deterministic template-based algorithm is used as-is.
 
 Suggested env var:
+
 ```
 OPENAI_API_KEY=...
 ```
 
+Model used: `gpt-4o-mini` with JSON response. If the LLM call fails or no key is set, the original template output is returned.
+
 ## What can be added next
+
 - Stronger keyword scheduling: guarantee every keyword is used before repeating, with explicit per-week coverage targets.
 - Adaptive subreddit pacing: weekly caps and cooldowns per subreddit based on historical usage.
 - Persona fairness in comments: boost rarely used personas as commenters when imbalance is detected.
 - Richer thread shapes: occasional second-level replies from varied personas, with light disagreement for realism.
 - A/B style variants: rotate writing tones or compare template families for higher engagement.
 - Automated regression tests: snapshot generated calendars to catch regressions in randomness and distribution.
+
 ## Future Enhancements
 
 - [ ] AI-powered content generation (OpenAI/Claude integration)

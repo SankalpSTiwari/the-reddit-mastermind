@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateContentCalendar, updateCalendarHistory, createEmptyHistory } from "@/lib/algorithm";
 import { ContentCalendarInput, CalendarHistory } from "@/lib/types";
 import { getServerSupabaseClient } from "@/lib/supabase";
+import OpenAI from "openai";
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,16 +47,19 @@ export async function POST(request: NextRequest) {
     // Generate the calendar
     const calendar = generateContentCalendar(inputWithDate, calendarHistory);
 
+    // Optional: LLM polish for titles/bodies if OPENAI_API_KEY is set
+    const polishedCalendar = await maybePolishWithLLM(calendar);
+
     // Update history for subsequent weeks
-    const updatedHistory = updateCalendarHistory(calendarHistory, calendar);
+    const updatedHistory = updateCalendarHistory(calendarHistory, polishedCalendar);
 
     // Persist to Supabase if configured (best-effort, non-blocking)
-    persistCalendar(calendar).catch((err) =>
+    persistCalendar(polishedCalendar).catch((err) =>
       console.error("Supabase persistence error (non-blocking):", err)
     );
 
     return NextResponse.json({
-      calendar,
+      calendar: polishedCalendar,
       history: updatedHistory,
     });
   } catch (error) {
@@ -65,6 +69,47 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+async function maybePolishWithLLM(calendar: any) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return calendar;
+
+  const client = new OpenAI({ apiKey });
+
+  const polishedPosts = await Promise.all(
+    calendar.posts.map(async (post: any) => {
+      try {
+        const res = await client.chat.completions.create({
+          model: "gpt-4o-mini",
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are an editor. Rewrite the Reddit post title/body to sound natural, concise, and human. Keep intent the same. Return JSON: {\"title\": \"...\", \"body\": \"...\"}.",
+            },
+            {
+              role: "user",
+              content: JSON.stringify({ title: post.title, body: post.body }),
+            },
+          ],
+        });
+
+        const parsed = JSON.parse(res.choices[0]?.message?.content ?? "{}");
+        return {
+          ...post,
+          title: parsed.title ? String(parsed.title).slice(0, 180) : post.title,
+          body: parsed.body ? String(parsed.body).slice(0, 1200) : post.body,
+        };
+      } catch (err) {
+        console.error("LLM polish failed, using original post", err);
+        return post;
+      }
+    })
+  );
+
+  return { ...calendar, posts: polishedPosts };
 }
 
 async function persistCalendar(calendar: any) {
