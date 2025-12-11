@@ -183,29 +183,31 @@ The app is a standard Next.js application and can be deployed to:
 1. **Plan distribution**
 
    - Spread posts Mon–Fri, peak hours 9a–8p
-   - Rotate subreddits using usage scores + history to avoid overposting
+   - Rotate subreddits using usage/history; avoid repeating a subreddit within the same week when enough subs are available
    - Rotate personas with subreddit affinity and usage balancing
    - Rotate engagement types (question, recommendation, comparison, discussion)
-   - Select 2–3 keywords per post to maximize coverage across the week
+   - Select primary keywords in a round-robin, then add 1–2 extras to maximize coverage
 
 2. **Generate posts**
 
    - Engagement-type templates with keyword cleaning (avoid duplicated prefixes like “best …”)
    - Comparison posts use subreddit-aware competitor lists
    - Titles/bodies kept short, natural, and editable
+   - Time jitter on post timestamps to avoid exact patterns
 
 3. **Generate threads**
 
    - 2–4 comments per post
    - First comment is a natural product mention; second adds social proof; OP closes the loop
+    - Optional depth-2 reply from a different persona for thread variety
    - Realistic time gaps between post and replies; OP never comments first
 
 4. **Quality scoring**
 
    - **Naturalness**: duplicate titles, timing variety, self-replies penalized
    - **Diversity**: subreddit spread, persona balance (std dev), engagement variety
-   - **Keyword coverage**: % of keywords used
-   - **Warnings**: overposting in a subreddit, persona imbalance, low coverage
+   - **Keyword coverage**: % of keywords used; primary keywords are tracked to discourage repeats
+   - **Warnings**: overposting in a subreddit, persona imbalance, low coverage, repeated primaries
 
 5. **History for subsequent weeks**
    - Track used topics (titles) to reduce repetition
@@ -217,7 +219,8 @@ The app is a standard Next.js application and can be deployed to:
 - **Per-week subreddit uniqueness**: If there are enough unique subreddits for the week, the planner avoids repeating a subreddit within that week.
 - **Personas/comments**: Commenters are shuffled so different personas participate across threads.
 - **Title de-dupe**: Titles prefer unused variants; if all collide, a “(new take)” suffix is added to reduce repetition.
-- **Keyword cleaning**: Removes prefixes like “best”, “how to” to avoid awkward duplicates.
+- **Keyword cleaning**: Removes prefixes like “best”, “how to” to avoid awkward duplicates; primaries are rotated before reuse.
+- **Time jitter**: Posts get minute-level jitter around optimal hours to reduce predictability.
 
 ### Interpreting the metrics
 
