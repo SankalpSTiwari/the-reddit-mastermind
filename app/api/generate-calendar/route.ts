@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateContentCalendar, updateCalendarHistory, createEmptyHistory } from "@/lib/algorithm";
 import { ContentCalendarInput, CalendarHistory } from "@/lib/types";
+import { getServerSupabaseClient } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,6 +49,11 @@ export async function POST(request: NextRequest) {
     // Update history for subsequent weeks
     const updatedHistory = updateCalendarHistory(calendarHistory, calendar);
 
+    // Persist to Supabase if configured (best-effort, non-blocking)
+    persistCalendar(calendar).catch((err) =>
+      console.error("Supabase persistence error (non-blocking):", err)
+    );
+
     return NextResponse.json({
       calendar,
       history: updatedHistory,
@@ -59,5 +65,16 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+async function persistCalendar(calendar: any) {
+  const supabase = getServerSupabaseClient();
+  if (!supabase) return; // no-op if env vars not provided
+
+  await supabase.from("calendars").insert({
+    week_number: calendar.weekNumber,
+    week_start_date: calendar.weekStartDate,
+    payload: calendar,
+  });
 }
 

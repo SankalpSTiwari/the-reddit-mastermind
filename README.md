@@ -123,6 +123,44 @@ The app will be available at http://localhost:3000. Stop with:
 docker stop reddit-mastermind && docker rm reddit-mastermind
 ```
 
+### Supabase (optional persistence)
+
+Persistence is best-effort: if env vars are set, generated calendars are inserted into a `calendars` table.
+
+Env vars:
+```
+NEXT_PUBLIC_SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+```
+
+Suggested schema:
+```sql
+create table public.calendars (
+  id uuid primary key default gen_random_uuid(),
+  week_number int not null,
+  week_start_date timestamptz not null,
+  payload jsonb not null,
+  created_at timestamptz default now()
+);
+```
+
+If the env vars are not provided, the API skips persistence without failing the request.
+
+### Docker
+
+Build and run locally:
+
+```bash
+docker build -t reddit-mastermind .
+docker run -d -p 3000:3000 --name reddit-mastermind reddit-mastermind
+```
+
+The app will be available at http://localhost:3000. Stop with:
+
+```bash
+docker stop reddit-mastermind && docker rm reddit-mastermind
+```
+
 ## Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
