@@ -213,17 +213,20 @@ The app is a standard Next.js application and can be deployed to:
    - `updateCalendarHistory` merges the latest calendar into history
 
 ### Randomness, rotation, and de-duplication
+
 - **Per-week subreddit uniqueness**: If there are enough unique subreddits for the week, the planner avoids repeating a subreddit within that week.
 - **Personas/comments**: Commenters are shuffled so different personas participate across threads.
 - **Title de-dupe**: Titles prefer unused variants; if all collide, a “(new take)” suffix is added to reduce repetition.
 - **Keyword cleaning**: Removes prefixes like “best”, “how to” to avoid awkward duplicates.
 
 ### Interpreting the metrics
+
 - **Subreddit Distribution**: Number of posts per subreddit for the current week.
 - **Persona Activity**: Total contributions (posts + comments) per persona for the week. Example: 3 posts + 7 comments = 10 total activity, which should equal the sum of persona counts.
 - **Keyword Coverage**: Percentage of unique keywords used that week. With only 3 posts/week and a long keyword list, coverage will be <100%; increase posts/week to cover more keywords.
 
 ### Known constraints
+
 - Cron not wired; “Generate Week N” simulates the scheduled run.
 - Supabase persistence is best-effort; skips if env vars are absent.
 - Content is template-based (no LLM); you can layer AI generation later if needed.

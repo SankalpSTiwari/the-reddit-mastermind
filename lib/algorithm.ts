@@ -71,6 +71,7 @@ function planPostDistribution(
   // Track usage to ensure diversity
   const subredditUsage: Record<string, number> = {};
   const personaUsage: Record<string, number> = {};
+  const chosenThisWeek = new Set<string>();
 
   // Initialize from history if available
   if (history) {
@@ -94,9 +95,16 @@ function planPostDistribution(
   const postDays = distributePostsAcrossDays(postsPerWeek);
 
   for (let i = 0; i < postsPerWeek; i++) {
-    // Select subreddit (favor less-used ones to avoid overposting)
-    const subreddit = selectSubreddit(subreddits, subredditUsage, history);
+    // Select subreddit (favor less-used ones to avoid overposting, prefer fresh picks this week)
+    const subreddit = selectSubreddit(
+      subreddits,
+      subredditUsage,
+      history,
+      chosenThisWeek,
+      postsPerWeek
+    );
     subredditUsage[subreddit] = (subredditUsage[subreddit] || 0) + 1;
+    chosenThisWeek.add(subreddit);
 
     // Select author persona (match to subreddit + rotate for diversity)
     const author = selectAuthor(personas, subreddit, personaUsage);
@@ -144,16 +152,24 @@ function distributePostsAcrossDays(postsPerWeek: number): number[] {
 function selectSubreddit(
   subreddits: string[],
   usage: Record<string, number>,
-  history?: CalendarHistory
+  history?: CalendarHistory,
+  chosenThisWeek?: Set<string>,
+  postsPerWeek?: number
 ): string {
+  const uniqueSubs = new Set(subreddits);
+  const allowRepeatThisWeek =
+    !chosenThisWeek || uniqueSubs.size < (postsPerWeek || subreddits.length);
+
   // Score each subreddit (lower usage = higher score)
-  const scored = subreddits.map((sub) => {
-    const currentUsage = usage[sub] || 0;
-    const historicalUsage = history?.usedSubredditPostCounts[sub] || 0;
-    // Penalize overused subreddits heavily
-    const score = 100 - currentUsage * 20 - historicalUsage * 5;
-    return { subreddit: sub, score };
-  });
+  const scored = subreddits
+    .filter((sub) => allowRepeatThisWeek || !chosenThisWeek?.has(sub))
+    .map((sub) => {
+      const currentUsage = usage[sub] || 0;
+      const historicalUsage = history?.usedSubredditPostCounts[sub] || 0;
+      // Penalize overused subreddits heavily
+      const score = 100 - currentUsage * 20 - historicalUsage * 5;
+      return { subreddit: sub, score };
+    });
 
   // Sort by score and pick from top candidates with some randomness
   scored.sort((a, b) => b.score - a.score);
@@ -189,17 +205,22 @@ function selectKeywords(
   postIndex: number,
   totalPosts: number
 ): Keyword[] {
-  // Ensure keyword coverage across all posts
-  const keywordsPerPost = Math.ceil(keywords.length / totalPosts);
-  const startIdx = (postIndex * keywordsPerPost) % keywords.length;
+  // Better coverage: round-robin primaries, then add 1-2 additional keywords
+  const shuffled = shuffleArray(keywords);
+  const primary = shuffled[postIndex % shuffled.length];
 
-  const selected: Keyword[] = [];
-  for (let i = 0; i < Math.min(3, keywordsPerPost); i++) {
-    const idx = (startIdx + i) % keywords.length;
-    selected.push(keywords[idx]);
+  const extras: Keyword[] = [];
+  const extrasNeeded = Math.max(0, Math.min(2, 3 - 1)); // up to 2 extras
+  let cursor = (postIndex * 2 + 1) % shuffled.length;
+  while (extras.length < extrasNeeded && extras.length + 1 < keywords.length) {
+    const candidate = shuffled[cursor % shuffled.length];
+    if (candidate.id !== primary.id && !extras.find((k) => k.id === candidate.id)) {
+      extras.push(candidate);
+    }
+    cursor++;
   }
 
-  return selected;
+  return [primary, ...extras];
 }
 
 // ============================================================================
@@ -213,15 +234,23 @@ function generatePosts(
   history?: CalendarHistory
 ): Post[] {
   const usedTitles = new Set<string>(history?.usedTopics || []);
+  const usedPrimaries = new Set<string>(); // primary keyword ids used this week
 
   return plans.map((plan, index) => {
-    const timestamp = addHours(
+    const baseTimestamp = addHours(
       addDays(weekStart, plan.dayOfWeek),
       plan.hourOfDay
     );
+    const timestamp = addMinutes(baseTimestamp, randomInRange(-15, 25)); // time jitter
 
-    const { title, body } = generatePostContent(plan, input, usedTitles);
+    const { title, body, primaryKeywordId } = generatePostContent(
+      plan,
+      input,
+      usedTitles,
+      usedPrimaries
+    );
     usedTitles.add(title.toLowerCase());
+    if (primaryKeywordId) usedPrimaries.add(primaryKeywordId);
 
     return {
       id: `P${index + 1}`,
@@ -239,35 +268,52 @@ function generatePosts(
 function generatePostContent(
   plan: PostPlan,
   input: ContentCalendarInput,
-  avoidTitles?: Set<string>
-): { title: string; body: string } {
+  avoidTitles?: Set<string>,
+  usedPrimaries?: Set<string>
+): { title: string; body: string; primaryKeywordId?: string } {
   const { engagementType, keywords, subreddit, author } = plan;
   const { company } = input;
+  const primaryKeywordId = keywords[0]?.id;
 
   // Generate based on engagement type
   switch (engagementType) {
     case 'question':
-      return generateQuestionPost(keywords, subreddit, author, avoidTitles);
+      return {
+        ...generateQuestionPost(keywords, subreddit, author, avoidTitles),
+        primaryKeywordId,
+      };
     case 'recommendation-seeking':
-      return generateRecommendationPost(
-        keywords,
-        subreddit,
-        author,
-        company,
-        avoidTitles
-      );
+      return {
+        ...generateRecommendationPost(
+          keywords,
+          subreddit,
+          author,
+          company,
+          avoidTitles
+        ),
+        primaryKeywordId,
+      };
     case 'comparison':
-      return generateComparisonPost(
-        keywords,
-        subreddit,
-        author,
-        company,
-        avoidTitles
-      );
+      return {
+        ...generateComparisonPost(
+          keywords,
+          subreddit,
+          author,
+          company,
+          avoidTitles
+        ),
+        primaryKeywordId,
+      };
     case 'discussion':
-      return generateDiscussionPost(keywords, subreddit, author, avoidTitles);
+      return {
+        ...generateDiscussionPost(keywords, subreddit, author, avoidTitles),
+        primaryKeywordId,
+      };
     default:
-      return generateQuestionPost(keywords, subreddit, author, avoidTitles);
+      return {
+        ...generateQuestionPost(keywords, subreddit, author, avoidTitles),
+        primaryKeywordId,
+      };
   }
 }
 
@@ -463,7 +509,9 @@ function generateThreadForPost(
   const { personas, company } = input;
 
   // Get available commenters (exclude post author)
-  const commenters = personas.filter((p) => p.username !== post.authorUsername);
+  const commenters = shuffleArray(
+    personas.filter((p) => p.username !== post.authorUsername)
+  );
   if (commenters.length < 2) return comments;
 
   // Generate 2-4 comments per post
@@ -501,7 +549,7 @@ function generateThreadForPost(
     };
     comments.push(secondComment);
 
-    // Third comment: OP response (closes the loop naturally)
+    // Optional third comment: OP response (closes the loop naturally)
     if (numComments >= 3) {
       const opResponse: Comment = {
         id: `C${startId + 2}`,
@@ -511,12 +559,30 @@ function generateThreadForPost(
         username: post.authorUsername,
         timestamp: addMinutes(
           secondComment.timestamp,
-          8 + Math.floor(Math.random() * 15)
+          6 + Math.floor(Math.random() * 12)
         ),
         mentionsProduct: false,
         sentimentType: 'curious',
       };
       comments.push(opResponse);
+
+      // Optional depth-2 reply from a different persona for thread variety
+      if (numComments >= 4 && commenters.length > 2) {
+        const depthResponder = commenters[2];
+        comments.push({
+          id: `C${startId + 3}`,
+          postId: post.id,
+          parentCommentId: opResponse.id,
+          commentText: generateAgreementComment(company),
+          username: depthResponder.username,
+          timestamp: addMinutes(
+            opResponse.timestamp,
+            5 + Math.floor(Math.random() * 10)
+          ),
+          mentionsProduct: true,
+          sentimentType: 'supportive',
+        });
+      }
     }
   }
 
@@ -627,6 +693,13 @@ function calculateQualityMetrics(
     );
   }
 
+  // Penalize repeated primary keywords across posts
+  const primaryKeywords = posts.map((p) => p.keywordIds[0]).filter(Boolean);
+  const uniquePrimaries = new Set(primaryKeywords);
+  if (uniquePrimaries.size < primaryKeywords.length) {
+    warnings.push('Repeated primary keywords detected; coverage could improve');
+  }
+
   // Calculate naturalness score (based on conversation patterns)
   const naturalnessScore = calculateNaturalnessScore(posts, comments);
 
@@ -732,6 +805,10 @@ function shuffleArray<T>(array: T[]): T[] {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
+}
+
+function randomInRange(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 // Select a template while avoiding repeated titles when possible
