@@ -108,6 +108,21 @@ The app is a standard Next.js application and can be deployed to:
 - AWS Amplify
 - Docker containers
 
+### Docker
+
+Build and run locally:
+
+```bash
+docker build -t reddit-mastermind .
+docker run -d -p 3000:3000 --name reddit-mastermind reddit-mastermind
+```
+
+The app will be available at http://localhost:3000. Stop with:
+
+```bash
+docker stop reddit-mastermind && docker rm reddit-mastermind
+```
+
 ## Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
@@ -180,7 +195,3 @@ The app is a standard Next.js application and can be deployed to:
 - [ ] A/B testing different post styles
 - [ ] Analytics dashboard
 - [ ] Direct Reddit API integration
-
-## License
-
-MIT
