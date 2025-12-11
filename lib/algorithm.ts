@@ -209,14 +209,19 @@ function selectKeywords(
 function generatePosts(
   plans: PostPlan[],
   input: ContentCalendarInput,
-  weekStart: Date
+  weekStart: Date,
+  history?: CalendarHistory
 ): Post[] {
+  const usedTitles = new Set<string>(history?.usedTopics || []);
+
   return plans.map((plan, index) => {
     const timestamp = addHours(
       addDays(weekStart, plan.dayOfWeek),
       plan.hourOfDay
     );
-    const { title, body } = generatePostContent(plan, input);
+
+    const { title, body } = generatePostContent(plan, input, usedTitles);
+    usedTitles.add(title.toLowerCase());
 
     return {
       id: `P${index + 1}`,
@@ -233,7 +238,8 @@ function generatePosts(
 
 function generatePostContent(
   plan: PostPlan,
-  input: ContentCalendarInput
+  input: ContentCalendarInput,
+  avoidTitles?: Set<string>
 ): { title: string; body: string } {
   const { engagementType, keywords, subreddit, author } = plan;
   const { company } = input;
@@ -241,22 +247,35 @@ function generatePostContent(
   // Generate based on engagement type
   switch (engagementType) {
     case 'question':
-      return generateQuestionPost(keywords, subreddit, author);
+      return generateQuestionPost(keywords, subreddit, author, avoidTitles);
     case 'recommendation-seeking':
-      return generateRecommendationPost(keywords, subreddit, author, company);
+      return generateRecommendationPost(
+        keywords,
+        subreddit,
+        author,
+        company,
+        avoidTitles
+      );
     case 'comparison':
-      return generateComparisonPost(keywords, subreddit, author, company);
+      return generateComparisonPost(
+        keywords,
+        subreddit,
+        author,
+        company,
+        avoidTitles
+      );
     case 'discussion':
-      return generateDiscussionPost(keywords, subreddit, author);
+      return generateDiscussionPost(keywords, subreddit, author, avoidTitles);
     default:
-      return generateQuestionPost(keywords, subreddit, author);
+      return generateQuestionPost(keywords, subreddit, author, avoidTitles);
   }
 }
 
 function generateQuestionPost(
   keywords: Keyword[],
   subreddit: string,
-  author: Persona
+  author: Persona,
+  avoidTitles?: Set<string>
 ): { title: string; body: string } {
   const rawKeyword = keywords[0]?.keyword || 'tool';
   // Clean keyword - remove leading "best", "how to", etc. to avoid duplication
@@ -281,16 +300,15 @@ function generateQuestionPost(
     },
   ];
 
-  // Select template based on author's style (consistent per persona)
-  const templateIndex = hashString(author.username) % templates.length;
-  return templates[templateIndex];
+  return pickTemplate(templates, avoidTitles);
 }
 
 function generateRecommendationPost(
   keywords: Keyword[],
   subreddit: string,
   author: Persona,
-  company: { name: string }
+  company: { name: string },
+  avoidTitles?: Set<string>
 ): { title: string; body: string } {
   const rawKeyword = keywords[0]?.keyword || 'tool';
   const keyword = cleanKeyword(rawKeyword);
@@ -312,16 +330,15 @@ function generateRecommendationPost(
     },
   ];
 
-  const templateIndex =
-    hashString(author.username + keyword) % templates.length;
-  return templates[templateIndex];
+  return pickTemplate(templates, avoidTitles);
 }
 
 function generateComparisonPost(
   keywords: Keyword[],
   subreddit: string,
   author: Persona,
-  company: { name: string }
+  company: { name: string },
+  avoidTitles?: Set<string>
 ): { title: string; body: string } {
   const rawKeyword = keywords[0]?.keyword || 'tool';
   const productName = company.name;
@@ -347,9 +364,7 @@ function generateComparisonPost(
         body: `Looking for real experiences comparing these options. Which one worked better for you?`,
       },
     ];
-    const templateIndex =
-      hashString(author.username + subreddit) % templates.length;
-    return templates[templateIndex];
+    return pickTemplate(templates, avoidTitles);
   }
 
   const keyword = cleanKeyword(rawKeyword);
@@ -357,7 +372,7 @@ function generateComparisonPost(
 
   // Create natural comparison posts
   const competitors = getCompetitorNames(subreddit, productName);
-  const competitor = competitors[0] || 'other tools';
+  const competitor = competitors[0] || 'Canva';
 
   const templates = [
     {
@@ -374,15 +389,14 @@ function generateComparisonPost(
     },
   ];
 
-  const templateIndex =
-    hashString(author.username + subreddit) % templates.length;
-  return templates[templateIndex];
+  return pickTemplate(templates, avoidTitles);
 }
 
 function generateDiscussionPost(
   keywords: Keyword[],
   subreddit: string,
-  author: Persona
+  author: Persona,
+  avoidTitles?: Set<string>
 ): { title: string; body: string } {
   const rawKeyword = keywords[0]?.keyword || 'tool';
   const keyword = cleanKeyword(rawKeyword);
@@ -403,9 +417,7 @@ function generateDiscussionPost(
     },
   ];
 
-  const templateIndex =
-    hashString(author.username + keyword) % templates.length;
-  return templates[templateIndex];
+  return pickTemplate(templates, avoidTitles);
 }
 
 function getCompetitorNames(subreddit: string, exclude: string): string[] {
@@ -415,7 +427,7 @@ function getCompetitorNames(subreddit: string, exclude: string): string[] {
     'r/Canva': ['Canva', 'Adobe Express', 'Figma', 'PowerPoint'],
     'r/ChatGPT': ['ChatGPT', 'Claude', 'Gemini', 'Copilot'],
     'r/ClaudeAI': ['Claude', 'ChatGPT', 'Gemini', 'Perplexity'],
-    default: ['existing tools', 'current solutions', 'alternatives'],
+    default: ['Slideforge', 'Canva', 'PowerPoint', 'Google Slides'],
   };
 
   const list = competitors[subreddit] || competitors['default'];
@@ -720,6 +732,30 @@ function shuffleArray<T>(array: T[]): T[] {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
+}
+
+// Select a template while avoiding repeated titles when possible
+function pickTemplate(
+  templates: { title: string; body: string }[],
+  avoidTitles?: Set<string>
+): { title: string; body: string } {
+  if (!avoidTitles || avoidTitles.size === 0) {
+    return templates[Math.floor(Math.random() * templates.length)];
+  }
+
+  const shuffled = shuffleArray(templates);
+  for (const tpl of shuffled) {
+    if (!avoidTitles.has(tpl.title.toLowerCase())) {
+      return tpl;
+    }
+  }
+
+  // If everything collides, return a slightly varied fallback to reduce repetition
+  const fallback = shuffled[0];
+  return {
+    title: `${fallback.title} (new take)`,
+    body: fallback.body,
+  };
 }
 
 function cleanKeyword(keyword: string): string {

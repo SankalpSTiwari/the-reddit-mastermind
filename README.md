@@ -128,12 +128,14 @@ docker stop reddit-mastermind && docker rm reddit-mastermind
 Persistence is best-effort: if env vars are set, generated calendars are inserted into a `calendars` table.
 
 Env vars:
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=...
 SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
 Suggested schema:
+
 ```sql
 create table public.calendars (
   id uuid primary key default gen_random_uuid(),
