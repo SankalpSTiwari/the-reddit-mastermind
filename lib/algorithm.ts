@@ -214,7 +214,10 @@ function selectKeywords(
   let cursor = (postIndex * 2 + 1) % shuffled.length;
   while (extras.length < extrasNeeded && extras.length + 1 < keywords.length) {
     const candidate = shuffled[cursor % shuffled.length];
-    if (candidate.id !== primary.id && !extras.find((k) => k.id === candidate.id)) {
+    if (
+      candidate.id !== primary.id &&
+      !extras.find((k) => k.id === candidate.id)
+    ) {
       extras.push(candidate);
     }
     cursor++;

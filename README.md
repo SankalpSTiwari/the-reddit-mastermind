@@ -199,7 +199,7 @@ The app is a standard Next.js application and can be deployed to:
 
    - 2–4 comments per post
    - First comment is a natural product mention; second adds social proof; OP closes the loop
-    - Optional depth-2 reply from a different persona for thread variety
+   - Optional depth-2 reply from a different persona for thread variety
    - Realistic time gaps between post and replies; OP never comments first
 
 4. **Quality scoring**
@@ -234,6 +234,22 @@ The app is a standard Next.js application and can be deployed to:
 - Supabase persistence is best-effort; skips if env vars are absent.
 - Content is template-based (no LLM); you can layer AI generation later if needed.
 
+## Optional LLM enhancement (not required)
+
+If you provide an OpenAI API key, you can wrap the generated titles/bodies in a post-processing LLM call to polish wording and further reduce repetition. If no key is provided, the deterministic template-based algorithm is used as-is.
+
+Suggested env var:
+```
+OPENAI_API_KEY=...
+```
+
+## What can be added next
+- Stronger keyword scheduling: guarantee every keyword is used before repeating, with explicit per-week coverage targets.
+- Adaptive subreddit pacing: weekly caps and cooldowns per subreddit based on historical usage.
+- Persona fairness in comments: boost rarely used personas as commenters when imbalance is detected.
+- Richer thread shapes: occasional second-level replies from varied personas, with light disagreement for realism.
+- A/B style variants: rotate writing tones or compare template families for higher engagement.
+- Automated regression tests: snapshot generated calendars to catch regressions in randomness and distribution.
 ## Future Enhancements
 
 - [ ] AI-powered content generation (OpenAI/Claude integration)
