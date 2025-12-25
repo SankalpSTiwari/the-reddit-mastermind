@@ -421,22 +421,40 @@ function generateComparisonPost(
 
   // Create natural comparison posts
   const competitors = getCompetitorNames(subreddit, productName);
-  const competitor = competitors[0] || 'Canva';
+  // Use a generic fallback that works across industries, or skip competitor-specific templates
+  const competitor = competitors[0];
 
-  const templates = [
-    {
-      title: `${productName} vs ${competitor} for ${shortTopic}?`,
-      body: `Trying to figure out what's the best option for ${shortTopic}. Has anyone used both? Looking for real experiences.`,
-    },
-    {
-      title: `${competitor} alternative for ${shortTopic}?`,
-      body: `I've been using ${competitor} but wondering if there's something better for ${shortTopic}. Heard about a few alternatives but not sure what's worth trying.`,
-    },
-    {
-      title: `Comparing options for ${shortTopic}`,
-      body: `Need to pick between a few tools for ${shortTopic}. Anyone have experience comparing different solutions?`,
-    },
-  ];
+  // If we have a specific competitor, use competitor-specific templates
+  // Otherwise, use generic comparison templates
+  const templates = competitor
+    ? [
+        {
+          title: `${productName} vs ${competitor} for ${shortTopic}?`,
+          body: `Trying to figure out what's the best option for ${shortTopic}. Has anyone used both? Looking for real experiences.`,
+        },
+        {
+          title: `${competitor} alternative for ${shortTopic}?`,
+          body: `I've been using ${competitor} but wondering if there's something better for ${shortTopic}. Heard about a few alternatives but not sure what's worth trying.`,
+        },
+        {
+          title: `Comparing options for ${shortTopic}`,
+          body: `Need to pick between a few tools for ${shortTopic}. Anyone have experience comparing different solutions?`,
+        },
+      ]
+    : [
+        {
+          title: `Comparing options for ${shortTopic}`,
+          body: `Need to pick between a few tools for ${shortTopic}. Anyone have experience comparing different solutions?`,
+        },
+        {
+          title: `Best ${shortTopic} solution?`,
+          body: `Looking for the best option for ${shortTopic}. What are people using? Open to recommendations.`,
+        },
+        {
+          title: `${shortTopic} - what's working for you?`,
+          body: `Trying to find a good solution for ${shortTopic}. What tools or approaches have you found effective?`,
+        },
+      ];
 
   return pickTemplate(templates, avoidTitles);
 }
@@ -476,7 +494,7 @@ function getCompetitorNames(subreddit: string, exclude: string): string[] {
     'r/Canva': ['Canva', 'Adobe Express', 'Figma', 'PowerPoint'],
     'r/ChatGPT': ['ChatGPT', 'Claude', 'Gemini', 'Copilot'],
     'r/ClaudeAI': ['Claude', 'ChatGPT', 'Gemini', 'Perplexity'],
-    default: ['Slideforge', 'Canva', 'PowerPoint', 'Google Slides'],
+    default: [],
   };
 
   const list = competitors[subreddit] || competitors['default'];

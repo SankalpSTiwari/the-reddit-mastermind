@@ -38,7 +38,11 @@ export interface Post {
   authorUsername: string;
   timestamp: Date;
   keywordIds: string[];
-  engagementType: "question" | "discussion" | "recommendation-seeking" | "comparison";
+  engagementType:
+    | 'question'
+    | 'discussion'
+    | 'recommendation-seeking'
+    | 'comparison';
 }
 
 export interface Comment {
@@ -49,7 +53,7 @@ export interface Comment {
   username: string;
   timestamp: Date;
   mentionsProduct: boolean;
-  sentimentType: "supportive" | "neutral" | "curious" | "adds-context";
+  sentimentType: 'supportive' | 'neutral' | 'curious' | 'adds-context';
 }
 
 export interface ContentCalendar {
@@ -72,6 +76,7 @@ export interface QualityMetrics {
 }
 
 export interface CalendarHistory {
+  companyName?: string; // Namespace history per company
   calendars: ContentCalendar[];
   usedTopics: string[]; // Track to avoid repetition
   usedSubredditPostCounts: Record<string, number>; // Track posting frequency
@@ -79,14 +84,13 @@ export interface CalendarHistory {
 
 // Templates for generating natural content
 export interface PostTemplate {
-  type: Post["engagementType"];
+  type: Post['engagementType'];
   titlePatterns: string[];
   bodyPatterns: string[];
 }
 
 export interface CommentTemplate {
-  type: Comment["sentimentType"];
+  type: Comment['sentimentType'];
   patterns: string[];
   productMentionPatterns: string[];
 }
-

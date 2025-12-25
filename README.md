@@ -99,7 +99,25 @@ npm i -g vercel
 vercel
 ```
 
-### Supabase (optional persistence)
+### Environment Variables
+
+#### Claude API (optional, for content enhancement)
+
+To enable AI-powered content enhancement:
+
+```
+CLAUDE_API_KEY=...
+```
+
+Or use the standard Anthropic environment variable:
+
+```
+ANTHROPIC_API_KEY=...
+```
+
+If provided, Claude will polish all generated posts and comments to sound more natural and engaging.
+
+#### Supabase (optional persistence)
 
 Persistence is best-effort: if env vars are set, generated calendars are inserted into a `calendars` table.
 
@@ -236,15 +254,27 @@ The app is a standard Next.js application and can be deployed to:
 
 ## Optional LLM enhancement (not required)
 
-If you provide an OpenAI API key, you can wrap the generated titles/bodies in a post-processing LLM call to polish wording and further reduce repetition. If no key is provided, the deterministic template-based algorithm is used as-is.
+If you provide a Claude API key, the generated titles, bodies, and comments will be enhanced with Claude AI to polish wording, make content more natural, and reduce repetition. If no key is provided, the deterministic template-based algorithm is used as-is.
 
 Suggested env var:
 
 ```
-OPENAI_API_KEY=...
+CLAUDE_API_KEY=...
 ```
 
-Model used: `gpt-4o-mini` with JSON response. If the LLM call fails or no key is set, the original template output is returned.
+Or use the standard Anthropic environment variable:
+
+```
+ANTHROPIC_API_KEY=...
+```
+
+Model used: `claude-3-5-sonnet-20241022`. The enhancement:
+
+- Polishes post titles and bodies to sound more natural and engaging
+- Enhances comments to be more conversational and authentic
+- Uses persona context (writing style, background) to maintain consistency
+- Preserves original intent while improving readability
+- If the LLM call fails or no key is set, the original template output is returned.
 
 ## What can be added next
 
@@ -257,7 +287,7 @@ Model used: `gpt-4o-mini` with JSON response. If the LLM call fails or no key is
 
 ## Future Enhancements
 
-- [ ] AI-powered content generation (OpenAI/Claude integration)
+- [x] AI-powered content generation (Claude integration)
 - [ ] Supabase integration for persistence
 - [ ] Cron job automation
 - [ ] A/B testing different post styles
